@@ -12,7 +12,7 @@ const NewsCard = ({ news }: { news: NewsItem[] }) => {
       {news.map((item) => (
         <Pressable
           key={item.id}
-          onPress={() => router.push(`/news/${item.id}` as any)}
+          onPress={() => router.push(`/(news)/${item.id}` as any)}
           style={styles.pressable}
         >
           <View style={styles.container}>

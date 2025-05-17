@@ -103,7 +103,7 @@ export default function index() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 25,
   },
   container: {
     display: "flex",

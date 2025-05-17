@@ -1,6 +1,8 @@
-import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Tabs } from "expo-router";
+import React from "react";
 
 export default function TabLayout() {
   return (
@@ -26,14 +28,45 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ptd"
         options={{
-          title: "PTD",
+          title: "Phương tiện đo",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "calendar" : "calendar-outline"}
+            <MaterialCommunityIcons
+              name={focused ? "gauge" : "gauge"}
               color={color}
               size={24}
             />
           ),
+          headerLeftContainerStyle: {
+            paddingLeft: 10,
+          },
+          headerRightContainerStyle: {
+            paddingRight: 20,
+          },
+          headerStyle: {
+            height: 120,
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="feedback"
+        options={{
+          title: "Phương tiện đo",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "receipt" : "receipt-outline"}
+              color={color}
+              size={24}
+            />
+          ),
+          headerLeftContainerStyle: {
+            paddingLeft: 10,
+          },
+          headerRightContainerStyle: {
+            paddingRight: 20,
+          },
+          headerStyle: {
+            height: 120,
+          },
         }}
       />
     </Tabs>
