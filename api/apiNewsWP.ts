@@ -29,11 +29,12 @@ export const fetchNewsFromWordPress = async (): Promise<NewsItem[]> => {
           id: post.id,
           title: decodeHtmlEntities(post.title.rendered),
           date: new Date(post.date).toLocaleDateString(),
-          content: decodeHtmlEntities(
+          excerpt: decodeHtmlEntities(
             post.excerpt.rendered
               .replace(/<\/?[^>]+(>|$)/g, "")
               .substring(0, 120) + "..."
           ),
+          content: decodeHtmlEntities(post.content.rendered),
           image: imageUrl,
         };
       })

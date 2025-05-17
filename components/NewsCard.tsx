@@ -1,26 +1,32 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { NewsItem } from "../types/new";
 
 const NewsCard = ({ news }: { news: NewsItem[] }) => {
+  const router = useRouter();
+
   return (
-    <View>
+    <View style={styles.newsContainer}>
       {news.map((item) => (
         <Pressable
           key={item.id}
-          onPress={() => console.log(`Mở bài viết: ${item.id}`)}
+          onPress={() => router.push(`/news/${item.id}` as any)}
+          style={styles.pressable}
         >
           <View style={styles.container}>
             <Image source={{ uri: item.image }} style={styles.image} />
             <View style={styles.textContainer}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.content}>{item.content}</Text>
+              <Text style={styles.title} numberOfLines={2}>
+                {item.title}
+              </Text>
+              {/* <Text style={styles.content}>{item.content}</Text> */}
               <View style={styles.datetime}>
                 <MaterialCommunityIcons
                   name="calendar"
                   color={"#8F9098"}
-                  size={18}
+                  size={16}
                 />
                 <Text style={styles.date}>{item.date}</Text>
               </View>
@@ -33,27 +39,35 @@ const NewsCard = ({ news }: { news: NewsItem[] }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "column",
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 20,
-    borderColor: "#409CF0",
+  newsContainer: {
+    gap: 12,
+  },
+  pressable: {
+    borderRadius: 12,
     backgroundColor: "white",
-    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  container: {
+    overflow: "hidden",
+    borderRadius: 12,
   },
   image: {
     width: "100%",
-    height: 150,
-    borderRadius: 10,
+    height: 160,
+    resizeMode: "cover",
   },
   textContainer: {
-    marginTop: 10,
+    padding: 12,
   },
   title: {
-    fontSize: 15,
-    color: "#5D5D5D",
+    fontSize: 16,
+    color: "#333",
     fontWeight: "600",
+    marginBottom: 8,
   },
   content: {
     fontSize: 14,
@@ -64,14 +78,12 @@ const styles = StyleSheet.create({
   datetime: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 7,
+    gap: 6,
   },
   date: {
     fontSize: 13,
-    color: "#7F7F7F",
+    color: "#8F9098",
     fontWeight: "400",
-    fontStyle: "italic",
   },
 });
 
