@@ -1,11 +1,11 @@
-import Filter from "@/components/Filter";
-import Sort from "@/components/Sort";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { fetchPTDData } from "../../api/apiPTD";
+import Filter from "../../components/Filter";
 import PTDBox from "../../components/PTDBox";
+import Sort from "../../components/Sort";
 import { PTDItem } from "../../types/ptd";
 
 const PTDScreen = () => {

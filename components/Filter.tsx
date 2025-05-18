@@ -24,13 +24,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     borderColor: "#C5C6CC",
-    justifyContent: "space-between", // Đảm bảo các phần tử căn giữa
-    width: 80, // Đặt chiều rộng tối thiểu nếu cần
+    justifyContent: "space-between",
+    width: 80,
   },
   text: {
     fontSize: 12,
     color: "#1F2024",
-    marginHorizontal: 5, // Thêm khoảng cách giữa các phần tử
+    marginHorizontal: 5,
   },
 });
 

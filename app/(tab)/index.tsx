@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 16,
-    marginBottom: 16,
   },
   newsCard: {
     shadowColor: "#409CF0",
@@ -125,7 +124,7 @@ const styles = StyleSheet.create({
   },
   loadMoreButton: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 20,
     padding: 10,
   },
   loadMoreText: {

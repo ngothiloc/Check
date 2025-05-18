@@ -15,11 +15,11 @@ import {
 
 // Define search suggestions data
 const searchSuggestions = [
-  { id: "1", title: "Thiết bị PTĐ", screen: "PTDScreen" },
-  { id: "2", title: "Phản hồi", screen: "FeedbackScreen" },
-  { id: "3", title: "Thông báo", screen: "NotificationScreen" },
-  { id: "4", title: "Cài đặt", screen: "SettingScreen" },
-  { id: "5", title: "Hồ sơ", screen: "ProfileScreen" },
+  { id: "1", title: "Thiết bị PTĐ", screen: "ptd" },
+  { id: "2", title: "Phản hồi", screen: "feedback" },
+  // { id: "3", title: "Thông báo", screen: "NotificationScreen" },
+  // { id: "4", title: "Cài đặt", screen: "SettingScreen" },
+  // { id: "5", title: "Hồ sơ", screen: "ProfileScreen" },
 ];
 
 // Khai báo kiểu cho props
