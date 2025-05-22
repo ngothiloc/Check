@@ -4,9 +4,16 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity } from "react-native";
 
 const { height, width } = Dimensions.get("window");
 
-const Filter = () => {
+// Thêm interface cho props
+interface FilterProps {
+  onPress?: () => void; // Thêm optional onPress prop
+}
+
+// Sử dụng React.FC và nhận props
+const Filter: React.FC<FilterProps> = ({ onPress }) => {
   return (
-    <TouchableOpacity style={styles.container}>
+    // Sử dụng onPress prop
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <MaterialCommunityIcons name="filter-outline" color="#8F9098" />
       <Text style={styles.text}>Lọc</Text>
       <MaterialCommunityIcons name="chevron-down" color="#8F9098" />

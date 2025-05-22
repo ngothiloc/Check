@@ -3,11 +3,12 @@ import BoxInfo from "@/components/BoxInfo";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import { NewsItem } from "@/types/new";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,23 +21,39 @@ export default function index() {
   const [loading, setLoading] = useState(true);
   const [displayedNews, setDisplayedNews] = useState<NewsItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const itemsPerPage = 5;
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const news = await fetchNewsFromWordPress();
-        setNewsData(news);
-        // Initialize with first 5 items
-        setDisplayedNews(news.slice(0, itemsPerPage));
-      } catch (error) {
-        console.error("Error fetching news:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchNews = async () => {
+    try {
+      const news = await fetchNewsFromWordPress();
+      setNewsData(news);
+      // Initialize with first 5 items
+      setDisplayedNews(news.slice(0, itemsPerPage));
+      setCurrentPage(1);
+      setError(false);
+      setErrorMessage("");
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      setError(true);
+      setErrorMessage("Không thể tải tin tức. Vui lòng thử lại sau.");
+      setNewsData([]); // Clear data on error
+      setDisplayedNews([]); // Clear displayed data on error
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     fetchNews();
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchNews();
   }, []);
 
   const handleLoadMore = () => {
@@ -58,6 +75,16 @@ export default function index() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#409CF0"]} // Màu của indicator khi refresh
+            tintColor="#409CF0" // Màu của indicator khi refresh (iOS)
+            title="Đang tải lại..." // Text hiển thị khi refresh (iOS)
+            titleColor="#409CF0" // Màu của text khi refresh (iOS)
+          />
+        }
       >
         <View style={styles.boxContact}>
           <BoxInfo />
@@ -82,6 +109,12 @@ export default function index() {
           <View style={styles.newsCard}>
             {loading ? (
               <ActivityIndicator size="large" color="#409CF0" />
+            ) : error ? (
+              <Text style={{ color: "red", textAlign: "center" }}>
+                {errorMessage}
+              </Text>
+            ) : newsData.length === 0 ? (
+              <Text style={{ textAlign: "center" }}>Không có tin tức nào.</Text>
             ) : (
               <NewsCard news={displayedNews} />
             )}

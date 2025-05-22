@@ -1,9 +1,17 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { fetchPTDData } from "../../api/apiPTD";
-import Filter from "../../components/Filter";
+import FilterModal from "../../app/(ptd)/filter";
+import FilterComponent from "../../components/Filter";
 import PTDBox from "../../components/PTDBox";
 import Sort from "../../components/Sort";
 import { PTDItem } from "../../types/ptd";
@@ -12,36 +20,195 @@ const PTDScreen = () => {
   const router = useRouter();
   const [deviceData, setDeviceData] = useState<PTDItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [originalData, setOriginalData] = useState<PTDItem[]>([]); // Store original data
+  const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<any>({}); // Store active filter criteria
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const loadData = async () => {
+    try {
+      const data = await fetchPTDData();
+      setDeviceData(data);
+      setOriginalData(data); // Save original data
+      setError(false);
+      setErrorMessage("");
+    } catch (error) {
+      console.error("Error loading PTD data:", error);
+      setError(true);
+      setErrorMessage("Không thể tải dữ liệu PTD. Vui lòng thử lại sau.");
+      setDeviceData([]); // Clear data on error
+      setOriginalData([]); // Clear original data on error
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchPTDData();
-        setDeviceData(data);
-      } catch (error) {
-        console.error("Error loading PTD data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
-  // const handleSortChange = (option: string) => {
-  //   const sorted = [...deviceData].sort((a, b) => {
-  //     const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-  //     const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-  //     const dateA = new Date(yearA, monthA - 1, dayA);
-  //     const dateB = new Date(yearB, monthB - 1, dayB);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+  }, []);
 
-  //     return option === "newest"
-  //       ? dateB.getTime() - dateA.getTime()
-  //       : dateA.getTime() - dateB.getTime();
-  //   });
+  useEffect(() => {
+    // Apply filters whenever activeFilters or originalData changes
+    applyFilters();
+  }, [activeFilters, originalData]);
 
-  //   setDeviceData(sorted);
-  // };
+  const applyFilters = () => {
+    let filteredData = [...originalData];
+
+    // Apply deviceName filter (case-insensitive, contains)
+    if (activeFilters.deviceName) {
+      filteredData = filteredData.filter((item) =>
+        item.deviceName
+          .toLowerCase()
+          .includes(activeFilters.deviceName.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (activeFilters.status) {
+      filteredData = filteredData.filter(
+        (item) => item.status === activeFilters.status
+      );
+    }
+
+    // Apply companyName filter (contains)
+    if (activeFilters.companyName) {
+      filteredData = filteredData.filter((item) =>
+        item.companyName
+          .toLowerCase()
+          .includes(activeFilters.companyName.toLowerCase())
+      );
+    }
+
+    // Apply model filter (contains)
+    if (activeFilters.model) {
+      filteredData = filteredData.filter((item) =>
+        item.model.toLowerCase().includes(activeFilters.model.toLowerCase())
+      );
+    }
+
+    // Apply serial filter (exact match)
+    if (activeFilters.serial) {
+      filteredData = filteredData.filter(
+        (item) => item.serial === activeFilters.serial
+      );
+    }
+
+    // Apply date range filter
+    if (activeFilters.dateFrom && activeFilters.dateTo) {
+      filteredData = filteredData.filter((item) => {
+        const [day, month, year] = item.date.split("/").map(Number);
+        const itemDate = new Date(year, month - 1, day);
+        return (
+          itemDate >= activeFilters.dateFrom && itemDate <= activeFilters.dateTo
+        );
+      });
+    } else if (activeFilters.dateFrom) {
+      filteredData = filteredData.filter((item) => {
+        const [day, month, year] = item.date.split("/").map(Number);
+        const itemDate = new Date(year, month - 1, day);
+        return itemDate >= activeFilters.dateFrom;
+      });
+    } else if (activeFilters.dateTo) {
+      filteredData = filteredData.filter((item) => {
+        const [day, month, year] = item.date.split("/").map(Number);
+        const itemDate = new Date(year, month - 1, day);
+        return itemDate <= activeFilters.dateTo;
+      });
+    }
+
+    // Apply requirement filter
+    if (activeFilters.requirement) {
+      filteredData = filteredData.filter(
+        (item) => item.requirement === activeFilters.requirement
+      );
+    }
+
+    // Apply receiveStatus filter
+    if (activeFilters.receiveStatus) {
+      filteredData = filteredData.filter(
+        (item) => item.receiveStatus === activeFilters.receiveStatus
+      );
+    }
+
+    // Apply returnStatus filter
+    if (activeFilters.returnStatus) {
+      filteredData = filteredData.filter(
+        (item) => item.returnStatus === activeFilters.returnStatus
+      );
+    }
+
+    // Apply bbdStatus filter
+    if (activeFilters.bbdStatus) {
+      filteredData = filteredData.filter(
+        (item) => item.bbdStatus === activeFilters.bbdStatus
+      );
+    }
+
+    // Apply certificateNumber filter (contains)
+    if (activeFilters.certificateNumber) {
+      filteredData = filteredData.filter((item) =>
+        item.certificateNumber
+          .toLowerCase()
+          .includes(activeFilters.certificateNumber.toLowerCase())
+      );
+    }
+
+    // Apply sealNumber filter (contains)
+    if (activeFilters.sealNumber) {
+      filteredData = filteredData.filter((item) =>
+        item.sealNumber
+          .toLowerCase()
+          .includes(activeFilters.sealNumber.toLowerCase())
+      );
+    }
+
+    setDeviceData(filteredData);
+  };
+
+  const handleSortChange = (option: "newest" | "oldest" | null) => {
+    if (!originalData) return; // Ensure originalData is loaded before sorting
+
+    if (!option) {
+      // Reset to filtered data if no sort option is selected (maintain current filters)
+      applyFilters(); // Re-apply filters without sorting
+      return;
+    }
+
+    const sorted = [...deviceData].sort((a, b) => {
+      const [dayA, monthA, yearA] = a.date.split("/").map(Number);
+      const [dayB, monthB, yearB] = b.date.split("/").map(Number);
+      const dateA = new Date(yearA, monthA - 1, dayA);
+      const dateB = new Date(yearB, monthB - 1, dayB);
+
+      return option === "newest"
+        ? dateB.getTime() - dateA.getTime()
+        : dateA.getTime() - dateB.getTime();
+    });
+
+    setDeviceData(sorted);
+  };
+
+  const handleFilterPress = () => {
+    setFilterModalVisible(true); // Open the filter modal
+  };
+
+  const handleFilterModalClose = () => {
+    setFilterModalVisible(false);
+  };
+
+  const handleApplyFilters = (criteria: any) => {
+    setActiveFilters(criteria);
+    setFilterModalVisible(false);
+  };
 
   if (loading) {
     return (
@@ -55,34 +222,60 @@ const PTDScreen = () => {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.sort}>
-        <Sort />
-        <Filter />
+        <Sort onSortChange={handleSortChange} />
+        <FilterComponent onPress={handleFilterPress} />
       </View>
       <View style={styles.ptdBox}>
-        <FlatList
-          data={deviceData}
-          renderItem={({ item }) => (
-            <PTDBox
-              image={item.image}
-              deviceName={item.deviceName}
-              status={item.status}
-              companyName={item.companyName}
-              model={item.model}
-              serial={item.serial}
-              staffImages={item.staffImages}
-              date={item.date}
-              requirement={item.requirement}
-              receiveStatus={item.receiveStatus}
-              returnStatus={item.returnStatus}
-              bbdStatus={item.bbdStatus}
-              certificateNumber={item.certificateNumber}
-              sealNumber={item.sealNumber}
-            />
-          )}
-          keyExtractor={(item, index) => index.toString()}
-          showsVerticalScrollIndicator={false}
-        />
+        {error ? (
+          <Text style={{ color: "red", textAlign: "center" }}>
+            {errorMessage}
+          </Text>
+        ) : deviceData.length === 0 ? (
+          <Text style={{ textAlign: "center" }}>Không có dữ liệu PTD nào.</Text>
+        ) : (
+          <FlatList
+            data={deviceData}
+            renderItem={({ item }) => (
+              <PTDBox
+                image={item.image}
+                deviceName={item.deviceName}
+                status={item.status}
+                companyName={item.companyName}
+                model={item.model}
+                serial={item.serial}
+                staffImages={item.staffImages}
+                date={item.date}
+                requirement={item.requirement}
+                receiveStatus={item.receiveStatus}
+                returnStatus={item.returnStatus}
+                bbdStatus={item.bbdStatus}
+                certificateNumber={item.certificateNumber}
+                sealNumber={item.sealNumber}
+              />
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#409CF0"]}
+                tintColor="#409CF0"
+                title="Đang tải lại..."
+                titleColor="#409CF0"
+              />
+            }
+          />
+        )}
       </View>
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={isFilterModalVisible}
+        onClose={handleFilterModalClose}
+        onApplyFilters={handleApplyFilters}
+        initialCriteria={activeFilters}
+      />
     </View>
   );
 };
@@ -105,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   ptdBox: {
-    marginTop: 20,
+    marginVertical: 30,
     shadowColor: "#409CF0",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
