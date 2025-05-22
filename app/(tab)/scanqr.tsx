@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -16,6 +17,12 @@ import Overlay from "../../components/Overlay";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SCAN_BOX_SIZE = 200;
+const HISTORY_STORAGE_KEY = "@qr_scan_history";
+
+interface HistoryItem {
+  url: string;
+  timestamp: number;
+}
 
 export default function App() {
   const router = useRouter();
@@ -68,9 +75,36 @@ export default function App() {
 
   // Function to navigate to scan history
   const goToScanHistory = () => {
-    // TODO: Implement navigation to scan history screen
-    console.log("Scan history button pressed");
-    // Example: router.push('/scan-history');
+    router.push("/(scanqr)/history");
+  };
+
+  // Function to save a link to history
+  const saveToHistory = async (url: string) => {
+    try {
+      // Read existing history
+      const existingHistoryJson = await AsyncStorage.getItem(
+        HISTORY_STORAGE_KEY
+      );
+      const existingHistory: HistoryItem[] = existingHistoryJson
+        ? JSON.parse(existingHistoryJson)
+        : [];
+
+      // Add the new item
+      const newItem: HistoryItem = { url, timestamp: Date.now() };
+      // Optional: Check if the last scanned item is the same to avoid duplicates if needed
+      // if (existingHistory.length === 0 || existingHistory[existingHistory.length - 1].url !== url) {
+      existingHistory.push(newItem);
+      // }
+
+      // Save the updated history (limit size if necessary, e.g., last 100 items)
+      await AsyncStorage.setItem(
+        HISTORY_STORAGE_KEY,
+        JSON.stringify(existingHistory)
+      );
+      console.log("Link saved to history:", url);
+    } catch (error) {
+      console.error("Error saving to history:", error);
+    }
   };
 
   // Updated handleBarCodeScanned logic
@@ -96,30 +130,28 @@ export default function App() {
         qrCenterY >= scanBoxY &&
         qrCenterY <= scanBoxY + SCAN_BOX_SIZE
       ) {
-        const now = Date.now();
+        // const now = Date.now(); // Not needed for debounce anymore
         if (
           event.data.startsWith("http://") ||
           event.data.startsWith("https://")
         ) {
-          // Debounce: only allow scanning the same link again after 2 seconds
-
           setActiveLink(event.data);
           actionSheetRef.current?.show(); // Show ActionSheet
-          setScannedLinks((prev) => ({ ...prev, [event.data]: now }));
+          saveToHistory(event.data); // Save the scanned link to history
+          // setScannedLinks((prev) => ({ ...prev, [event.data]: now })); // Not needed for debounce anymore
         }
       }
     } else {
       // Handle case where bounds is not defined (e.g., from image picker later)
-      const now = Date.now();
+      // const now = Date.now(); // Not needed for debounce anymore
       if (
         event.data.startsWith("http://") ||
         event.data.startsWith("https://")
       ) {
-        // Debounce: only allow scanning the same link again after 2 seconds
-
         setActiveLink(event.data);
         actionSheetRef.current?.show(); // Show ActionSheet
-        setScannedLinks((prev) => ({ ...prev, [event.data]: now }));
+        saveToHistory(event.data); // Save the scanned link to history
+        // setScannedLinks((prev) => ({ ...prev, [event.data]: now })); // Not needed for debounce anymore
       }
     }
   };
@@ -168,6 +200,7 @@ export default function App() {
         style={styles.camera}
         facing="back"
         onBarcodeScanned={activeLink ? undefined : handleBarCodeScanned}
+        enableTorch={flash}
       />
       <Overlay />
 

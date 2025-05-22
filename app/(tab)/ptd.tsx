@@ -1,4 +1,5 @@
-import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -10,11 +11,13 @@ import {
   View,
 } from "react-native";
 import { fetchPTDData } from "../../api/apiPTD";
+import { fetchFullUserData } from "../../api/user";
 import FilterModal from "../../app/(ptd)/filter";
 import FilterComponent from "../../components/Filter";
 import PTDBox from "../../components/PTDBox";
 import Sort from "../../components/Sort";
 import { PTDItem } from "../../types/ptd";
+import { BasicUserData } from "../../types/user";
 
 const PTDScreen = () => {
   const router = useRouter();
@@ -27,7 +30,8 @@ const PTDScreen = () => {
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadData = async () => {
+  // Wrap loadData in useCallback to make it stable
+  const loadData = useCallback(async () => {
     try {
       const data = await fetchPTDData();
       setDeviceData(data);
@@ -44,16 +48,44 @@ const PTDScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []); // Empty dependency array means this function is created only once
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Use useFocusEffect to load data when the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+
+      // Cleanup function (optional)
+      return () => {
+        // Any cleanup needed when the screen loses focus
+      };
+    }, [loadData]) // loadData is a dependency
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
-  }, []);
+    try {
+      // Get basic user data to access email
+      const userDataStr = await AsyncStorage.getItem("userData");
+      if (userDataStr) {
+        const basicUserData: BasicUserData = JSON.parse(userDataStr);
+        // Fetch full user data from server to update AsyncStorage
+        await fetchFullUserData(basicUserData.email);
+        // Load updated data from AsyncStorage
+        await loadData();
+      } else {
+        console.warn(
+          "Cannot refresh: No basic user data found in AsyncStorage."
+        );
+        // Optionally redirect to login or show an error
+        setRefreshing(false);
+      }
+    } catch (error) {
+      console.error("Error during refresh:", error);
+      setRefreshing(false);
+      // Optionally show an error message on the UI
+    }
+  }, [loadData]);
 
   useEffect(() => {
     // Apply filters whenever activeFilters or originalData changes
@@ -237,6 +269,8 @@ const PTDScreen = () => {
             data={deviceData}
             renderItem={({ item }) => (
               <PTDBox
+                id={item.id}
+                user_id={item.user_id}
                 image={item.image}
                 deviceName={item.deviceName}
                 status={item.status}
@@ -259,10 +293,10 @@ const PTDScreen = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={["#409CF0"]}
-                tintColor="#409CF0"
-                title="Đang tải lại..."
-                titleColor="#409CF0"
+                colors={["#gray"]}
+                tintColor="#gray"
+                // title="Đang tải lại..."
+                // titleColor="#409CF0"
               />
             }
           />
@@ -299,7 +333,7 @@ const styles = StyleSheet.create({
   },
   ptdBox: {
     marginVertical: 30,
-    shadowColor: "#409CF0",
+    // shadowColor: "#409CF0",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 1.5,

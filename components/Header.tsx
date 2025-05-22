@@ -1,6 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   StyleSheet,
@@ -8,9 +11,102 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { logout } from "../api/auth";
+import { fetchFullUserData } from "../api/user";
+import { BasicUserData, FullUserData } from "../types/user";
 import SearchBar from "./SearchBar";
+
 const { height, width } = Dimensions.get("window");
+
+interface UserData extends FullUserData {}
+
 export default function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<FullUserData | null>(null);
+  const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadUserData = async () => {
+        try {
+          const userToken = await AsyncStorage.getItem("userToken");
+          const userDataStr = await AsyncStorage.getItem("userData");
+
+          if (userToken && userDataStr) {
+            const basicUserData: BasicUserData = JSON.parse(userDataStr);
+            setIsLoggedIn(true);
+
+            const fullData = await fetchFullUserData(basicUserData.email);
+            setUserData(fullData);
+          } else {
+            setIsLoggedIn(false);
+            setUserData(null);
+          }
+        } catch (error) {
+          console.error("Error loading user data in Header on focus:", error);
+          setIsLoggedIn(false);
+          setUserData(null);
+        }
+      };
+
+      loadUserData();
+
+      return () => {
+        // Any cleanup needed when the screen loses focus
+      };
+    }, [])
+  );
+
+  const handleLogout = async () => {
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Đăng xuất",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+            setIsLoggedIn(false);
+            setUserData(null);
+            router.replace("/(tab)");
+          } catch (error) {
+            Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderUserInfo = () => {
+    if (isLoggedIn && userData) {
+      return (
+        <View style={styles.lefttext}>
+          <Text style={{ fontSize: 14, color: "white" }}>Xin chào</Text>
+          <Text style={{ fontSize: 24, color: "white" }}>{userData.name}</Text>
+          {userData.company && (
+            <Text style={{ fontSize: 14, color: "white" }}>
+              {userData.company.name}
+            </Text>
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.lefttext}>
+        <TouchableOpacity onPress={() => router.push("/register")}>
+          <Text style={styles.authLink}>Đăng ký</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/login")}>
+          <Text style={styles.authLink}>Đăng nhập</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.header}>
       <Image
@@ -18,13 +114,7 @@ export default function Header() {
         style={styles.linear}
       />
       <View style={styles.info}>
-        <View style={styles.lefttext}>
-          <Text style={{ fontSize: 14, color: "white" }}> Xin chào</Text>
-          <Text style={{ fontSize: 24, color: "white" }}>Ngô Tiến Lộc</Text>
-          <Text style={{ fontSize: 14, color: "white" }}>
-            Công ty cổ phần ABC
-          </Text>
-        </View>
+        {renderUserInfo()}
         <View style={styles.righttext}>
           <View style={styles.notification}>
             <TouchableOpacity>
@@ -35,14 +125,20 @@ export default function Header() {
               />
               <View style={styles.badge}></View>
             </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push("/scanqr")}>
+              <MaterialCommunityIcons
+                name="qrcode-scan"
+                size={25}
+                color="white"
+              />
+            </TouchableOpacity>
+            {isLoggedIn && (
+              <TouchableOpacity onPress={handleLogout}>
+                <MaterialCommunityIcons name="logout" size={25} color="white" />
+              </TouchableOpacity>
+            )}
           </View>
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="qrcode-scan"
-              size={25}
-              color="white"
-            />
-          </TouchableOpacity>
         </View>
       </View>
       <SearchBar style={styles.search} />
@@ -69,6 +165,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    height: 80,
     top: height < 1000 ? height * 0.07 : height * 0.1,
   },
   lefttext: {
@@ -77,12 +174,15 @@ const styles = StyleSheet.create({
   },
   righttext: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
   },
   notification: {
-    position: "relative",
+    display: "flex",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 20,
+    gap: 15,
   },
   badge: {
     position: "absolute",
@@ -96,9 +196,14 @@ const styles = StyleSheet.create({
   search: {
     position: "absolute",
     bottom: 0,
-    left: width * 0.1, // 10% từ bên trái màn hình
-    right: width * 0.1, // 10% từ bên phải màn hình
+    left: width * 0.1,
+    right: width * 0.1,
     top: height < 1000 ? height * 0.11 : height * 0.18,
     height: 50,
+  },
+  authLink: {
+    fontSize: 18,
+    color: "white",
+    marginVertical: 5,
   },
 });

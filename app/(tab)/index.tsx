@@ -71,7 +71,7 @@ export default function index() {
     <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
       <Header />
       <ScrollView
-        style={{ flex: 1, zIndex: 0 }}
+        style={{ flex: 1, zIndex: 0, marginTop: 25 }}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -79,10 +79,10 @@ export default function index() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#409CF0"]} // Màu của indicator khi refresh
-            tintColor="#409CF0" // Màu của indicator khi refresh (iOS)
-            title="Đang tải lại..." // Text hiển thị khi refresh (iOS)
-            titleColor="#409CF0" // Màu của text khi refresh (iOS)
+            colors={["#gray"]} // Màu của indicator khi refresh
+            tintColor="#gray" // Màu của indicator khi refresh (iOS)
+            // title="Đang tải lại..." // Text hiển thị khi refresh (iOS)
+            // titleColor="#409CF0" // Màu của text khi refresh (iOS)
           />
         }
       >
@@ -136,7 +136,6 @@ export default function index() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 25,
   },
   container: {
     display: "flex",

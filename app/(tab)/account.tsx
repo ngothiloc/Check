@@ -1,8 +1,11 @@
 import Header from "@/components/Header";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  BackHandler,
   Dimensions,
   Keyboard,
   StyleSheet,
@@ -14,8 +17,50 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
+interface UserData {
+  name: string;
+  email: string;
+  company: string;
+}
+
 export default function account() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  const checkLoginStatus = async () => {
+    try {
+      const userToken = await AsyncStorage.getItem("userToken");
+      const userDataStr = await AsyncStorage.getItem("userData");
+      if (userToken && userDataStr) {
+        setIsLoggedIn(true);
+        setUserData(JSON.parse(userDataStr));
+      }
+    } catch (error) {
+      console.error("Error checking login status:", error);
+    }
+  };
+
+  const handleExit = () => {
+    Alert.alert("Thoát ứng dụng", "Bạn có chắc chắn muốn thoát ứng dụng?", [
+      {
+        text: "Hủy",
+        style: "cancel",
+      },
+      {
+        text: "Thoát",
+        style: "destructive",
+        onPress: () => {
+          BackHandler.exitApp();
+        },
+      },
+    ]);
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={{ flex: 1, backgroundColor: "#FCFCFC" }}>
@@ -46,7 +91,7 @@ export default function account() {
           {/* Bảo mật tài khoản */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("/AccountSecurityScreen")}
+            onPress={() => router.push("../(account)/security")}
           >
             <MaterialCommunityIcons
               name="shield-half-full"
@@ -68,7 +113,7 @@ export default function account() {
           {/* Cài đặt */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("/SettingScreen")}
+            onPress={() => router.push("../(account)/setting")}
           >
             <MaterialCommunityIcons name="cogs" size={20} color="#5D5D5D" />
             <Text style={styles.text}>Cài đặt</Text>
@@ -81,7 +126,7 @@ export default function account() {
           </TouchableOpacity>
 
           {/* Thoát ứng dụng */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleExit}>
             <MaterialCommunityIcons
               name="exit-to-app"
               size={20}
@@ -94,6 +139,7 @@ export default function account() {
     </TouchableWithoutFeedback>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,

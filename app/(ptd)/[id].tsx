@@ -20,18 +20,26 @@ export default function PTDDetail() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.title}>{data.deviceName}</Text>
-        </View>
 
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{data.deviceName}</Text>
+      </View>
+      <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: data.image }}
+              style={styles.deviceImage}
+              resizeMode="cover"
+            />
+          </View>
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Thông tin thiết bị</Text>
             <View style={styles.infoRow}>
@@ -205,5 +213,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 200,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  deviceImage: {
+    width: "100%",
+    height: "100%",
   },
 });

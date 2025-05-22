@@ -6,6 +6,7 @@ export default function RootLayout() {
       <Stack.Screen name="(tab)" options={{ headerShown: false }} />
       <Stack.Screen name="(news)/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="(ptd)/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="(scanqr)/history" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -17,8 +17,8 @@ import {
 const searchSuggestions = [
   { id: "1", title: "Thiết bị PTĐ", screen: "ptd" },
   { id: "2", title: "Phản hồi", screen: "feedback" },
+  // { id: "3", title: "Cài đặt", screen: "setting" },
   // { id: "3", title: "Thông báo", screen: "NotificationScreen" },
-  // { id: "4", title: "Cài đặt", screen: "SettingScreen" },
   // { id: "5", title: "Hồ sơ", screen: "ProfileScreen" },
 ];
 
