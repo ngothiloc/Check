@@ -1,26 +1,50 @@
+import Title from "@/components/ui/Title";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Checkbox from "expo-checkbox";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Keyboard,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { loginUser } from "../api/auth";
+import InputInfor from "../components/ui/InputInfor";
+import InputPass from "../components/ui/InputPass";
+import LoginOrther from "../components/ui/LoginOther";
+// import Nut from "../components/Nut";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [mst, setMst] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassWord] = useState("");
+  const [isCheck, setIsCheck] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
+  const [checkPass, setCheckPass] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const LoginPress = async () => {
+    setIsSubmitted(true);
+    setCheckEmail(!validateEmail(email));
+    setCheckPass(password.length < 6);
+
+    if (!validateEmail(email) || password.length < 6) {
       return;
     }
 
@@ -45,118 +69,205 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Đăng nhập</Text>
-        <Text style={styles.subtitle}>Chào mừng bạn quay trở lại!</Text>
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập email của bạn"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mật khẩu</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập mật khẩu của bạn"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
-
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={{ backgroundColor: "#ffffff", flex: 1 }}>
         <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleLogin}
-          disabled={loading}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.loginButtonText}>Đăng nhập</Text>
-          )}
+          <MaterialCommunityIcons
+            name="chevron-left"
+            size={35}
+            color="#4f4e4e"
+          />
         </TouchableOpacity>
+        <Image
+          source={require("../assets/images/blur.png")}
+          style={{
+            position: "absolute",
+            top: -225,
+            width: "100%",
+          }}
+        />
+        <ScrollView>
+          <SafeAreaView>
+            <View
+              style={{
+                paddingHorizontal: 25,
+                marginTop: 100,
+              }}
+            >
+              <View style={styles.head}>
+                <View>
+                  <Image source={require("../assets/images/icon.png")} />
+                </View>
+                <View>
+                  <Text style={styles.title}>Đăng nhập</Text>
+                </View>
+                <View>
+                  <Text style={styles.subtitle}>
+                    Chào mừng bạn đến với ManLab-CheckPro
+                  </Text>
+                </View>
+              </View>
 
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={() => router.push("/register")}
-        >
-          <Text style={styles.registerButtonText}>
-            Chưa có tài khoản? Đăng ký ngay
-          </Text>
-        </TouchableOpacity>
+              <View style={{ gap: 8 }}>
+                <InputInfor
+                  text="Mã số thuế"
+                  leftIconName="form-select"
+                  onChangeText={(value: string) => setMst(value)}
+                />
+                <InputInfor
+                  text="Email"
+                  leftIconName="email-outline"
+                  keyboardType="email-address"
+                  onChangeText={(value: string) => setEmail(value)}
+                  isError={isSubmitted && checkEmail}
+                />
+                <InputPass
+                  text="Nhập mật khẩu"
+                  leftIconName="key-variant"
+                  keyboardType="visible-password"
+                  onChangeText={(value: string) => setPassWord(value)}
+                  isError={isSubmitted && checkPass}
+                />
+              </View>
+
+              <View style={styles.forgot}>
+                <View style={styles.leftContent}>
+                  <Checkbox
+                    style={styles.checkbox}
+                    value={isCheck}
+                    onValueChange={() => setIsCheck(!isCheck)}
+                  />
+                  <Text style={[styles.text, { color: "#6C7278" }]}>
+                    Ghi nhớ
+                  </Text>
+                </View>
+                <Text style={[styles.text, { color: "#4D81E7" }]}>
+                  Quên mật khẩu ?
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={LoginPress}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                )}
+              </TouchableOpacity>
+
+              <Title text="Phương thức đăng nhập" />
+
+              <View style={styles.socialLogin}>
+                <LoginOrther
+                  iconSource={require("../assets/images/google.png")}
+                  onPress={() => console.log("Google Login")}
+                />
+                <LoginOrther
+                  iconSource={require("../assets/images/facebook.png")}
+                  onPress={() => console.log("Facebook Login")}
+                />
+                <LoginOrther
+                  iconSource={require("../assets/images/apple.png")}
+                  onPress={() => console.log("Apple Login")}
+                />
+              </View>
+
+              <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Bạn chưa có tài khoản ?</Text>
+                <TouchableOpacity onPress={() => router.push("/register")}>
+                  <Text style={styles.registerLink}>Đăng ký</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </SafeAreaView>
+        </ScrollView>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FCFCFC",
+  head: {
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 32,
+  },
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 8,
+    zIndex: 10,
+    backgroundColor: "transparent",
     padding: 20,
   },
-  header: {
-    marginTop: 60,
-    marginBottom: 40,
-  },
   title: {
+    fontWeight: "700",
     fontSize: 32,
-    fontWeight: "bold",
-    color: "#409CF0",
-    marginBottom: 10,
+    color: "#1A1C1E",
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
-  },
-  form: {
-    gap: 20,
-  },
-  inputContainer: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 16,
-    color: "#333",
     fontWeight: "500",
+    fontSize: 12,
+    color: "#6C7278",
   },
-  input: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    fontSize: 16,
+  forgot: {
+    flexDirection: "row",
+    marginTop: 20,
+    justifyContent: "space-between",
+  },
+  text: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  leftContent: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  checkbox: {
+    padding: 8,
+    borderRadius: 4,
   },
   loginButton: {
+    marginTop: 20,
     backgroundColor: "#409CF0",
     padding: 15,
     borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
   },
   loginButtonText: {
     color: "white",
+    textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
   },
-  registerButton: {
-    alignItems: "center",
-    marginTop: 20,
+  socialLogin: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  registerButtonText: {
-    color: "#409CF0",
-    fontSize: 16,
+  registerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  registerText: {
+    color: "#6C7278",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  registerLink: {
+    color: "#4D81E7",
+    fontSize: 13,
+    fontWeight: "600",
+    marginHorizontal: 10,
+    marginVertical: 20,
   },
 });

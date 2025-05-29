@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FullUserData } from "../types/user";
 
-const API_URL = "https://manlab.sachhaymoingay.info.vn";
+const API_URL = "https://checkpro.manlab.vn";
 
 export const fetchFullUserData = async (email: string): Promise<FullUserData> => {
   try {
