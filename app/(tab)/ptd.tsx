@@ -216,10 +216,9 @@ const PTDScreen = () => {
     }
 
     const sorted = [...deviceData].sort((a, b) => {
-      const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-      const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-      const dateA = new Date(yearA, monthA - 1, dayA);
-      const dateB = new Date(yearB, monthB - 1, dayB);
+      // Xử lý trực tiếp định dạng YYYY-MM-DD từ API
+      const dateA = new Date(a.date); // a.date có định dạng "YYYY-MM-DD"
+      const dateB = new Date(b.date); // b.date có định dạng "YYYY-MM-DD"
 
       return option === "newest"
         ? dateB.getTime() - dateA.getTime()

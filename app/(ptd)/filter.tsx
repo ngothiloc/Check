@@ -472,7 +472,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 style={styles.resetButton}
                 onPress={handleReset}
               >
-                <Text style={styles.resetButtonText}>Tải lại</Text>
+                <Text style={styles.resetButtonText}>Xoá</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyButton}

@@ -1,5 +1,13 @@
 import { PTDItem } from "./ptd";
 
+export interface Notification {
+  id: string;
+  user_id: string;
+  message: string;
+  is_read: string;
+  created_at: string;
+}
+
 export interface BasicUserData {
   id: string;
   name: string;
@@ -23,6 +31,8 @@ export interface FullUserData extends BasicUserData {
   phone: string;
   sex: string;
   img: string;
+  role?: string;
   company: CompanyData;
   ptd: PTDItem[];
+  notifications?: Notification[];
 } 

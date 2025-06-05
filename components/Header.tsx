@@ -23,6 +23,7 @@ interface UserData extends FullUserData {}
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<FullUserData | null>(null);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const router = useRouter();
 
   useFocusEffect(
@@ -38,14 +39,22 @@ export default function Header() {
 
             const fullData = await fetchFullUserData(basicUserData.email);
             setUserData(fullData);
+
+            // Check for unread notifications from userData
+            const hasUnread = fullData.notifications?.some(
+              (notification) => notification.is_read === "0"
+            );
+            setHasUnreadNotifications(hasUnread || false);
           } else {
             setIsLoggedIn(false);
             setUserData(null);
+            setHasUnreadNotifications(false);
           }
         } catch (error) {
           console.error("Error loading user data in Header on focus:", error);
           setIsLoggedIn(false);
           setUserData(null);
+          setHasUnreadNotifications(false);
         }
       };
 
@@ -117,13 +126,13 @@ export default function Header() {
         {renderUserInfo()}
         <View style={styles.righttext}>
           <View style={styles.notification}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/notifications")}>
               <MaterialCommunityIcons
                 name="bell-outline"
                 size={25}
                 color="white"
               />
-              <View style={styles.badge}></View>
+              {hasUnreadNotifications && <View style={styles.badge}></View>}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.push("/scanqr")}>

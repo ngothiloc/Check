@@ -1,6 +1,5 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Image,
@@ -11,13 +10,12 @@ import {
   View,
 } from "react-native";
 
-type RootStackParamList = {
-  ptd: undefined;
-};
+// type RootStackParamList = {
+//   ptd: undefined;
+// };
 
 export default function BoxInfo() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const router = useRouter();
 
   return (
     <Pressable style={styles.container}>
@@ -49,7 +47,7 @@ export default function BoxInfo() {
           <View>
             <View style={styles.text}>
               <Text style={styles.h2}>
-                Lịch hẹn của tôi đã được xác nhận chưa
+                Lịch hẹn của tôi đã được xác nhận chưa?
               </Text>
               <Text style={styles.h2}>
                 Ai là người đang đến lấy mẫu cho tôi?{"\n"}Dự kiến tới thời gian
@@ -61,9 +59,11 @@ export default function BoxInfo() {
             </View>
             <TouchableOpacity
               style={styles.button}
-              onPress={() => navigation.navigate("ptd")}
+              onPress={() => router.push("/booking")}
             >
-              <Text style={{ fontSize: 12 }}>Đặt lịch ngay!</Text>
+              <Text style={{ fontSize: 12, color: "#000", fontWeight: "bold" }}>
+                Đặt lịch ngay!
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -112,6 +112,6 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 10,
   },
 });

@@ -3,6 +3,7 @@ import BoxInfo from "@/components/BoxInfo";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import { NewsItem } from "@/types/new";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -114,7 +115,21 @@ export default function index() {
                 {errorMessage}
               </Text>
             ) : newsData.length === 0 ? (
-              <Text style={{ textAlign: "center" }}>Không có tin tức nào.</Text>
+              <View
+                style={{
+                  alignItems: "center",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="access-point-off"
+                  size={60}
+                  color="#666"
+                  style={{ marginBottom: 10 }}
+                />
+                <Text style={{ textAlign: "center" }}>
+                  Không có tin tức nào.
+                </Text>
+              </View>
             ) : (
               <NewsCard news={displayedNews} />
             )}
@@ -149,10 +164,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   newsCard: {
-    shadowColor: "#409CF0",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 1.5,
+    // shadowColor: "#409CF0",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 20,
   },
   loadMoreButton: {
     alignItems: "center",
