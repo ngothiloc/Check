@@ -2,15 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_URL = "https://checkpro.manlab.vn";
 
-interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;   
-  };
-}
-
 interface RegisterResponse {
   token: string;
   user: {
@@ -58,69 +49,82 @@ export const registerUser = async (email: string, password: string, name: string
   }
 };
 
-export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
+export const loginUser = async (username: string, password: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/auth.php?route=login`, {
-      method: "POST",
+    // --- Đăng nhập theo kiểu mới giống PHP ---
+    const loginUrlGet = "https://manlab.etv.org.vn/Account/Login?returnurl=%2F";
+    const loginUrlPost = "https://manlab.etv.org.vn/Account/Login?returnurl=%2F";
+
+    // 1. Lấy token và cookie
+    const getRes = await fetch(loginUrlGet, {
+      method: "GET",
+      credentials: "include",
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        "User-Agent": "Mozilla/5.0",
       },
-      body: JSON.stringify({
-        email: email,
-        password: password
-      })
     });
+    const html = await getRes.text();
+    const cookie = getRes.headers.get("set-cookie");
 
-    const data = await response.json();
-    console.log('Login response:', data);
+    // Parse token từ HTML
+    const tokenMatch = html.match(/__RequestVerificationToken.+?value="([^"]+)"/);
+    const token = tokenMatch?.[1];
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
 
-    if (!data.token || !data.user) {
-      throw new Error("Invalid response format");
+    // 2. POST login
+    const formBody = new URLSearchParams({
+      __RequestVerificationToken: token,
+      UserName: username,
+      Password: password,
+      returnUrl: "/",
+    }).toString();
+
+    const postRes = await fetch(loginUrlPost, {
+      method: "POST",
+      credentials: "include", // vẫn giữ lại
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "Mozilla/5.0",
+      },
+      body: formBody,
+    });
+    const responseHtml = await postRes.text();
+
+    // 3. Parse kết quả
+    if (postRes.status === 200 && responseHtml.includes("Account_ID")) {
+      const idMatch = responseHtml.match(/<div id="Account_ID"[^>]*>([^<]+)<\/div>/);
+      const groupMatch = responseHtml.match(/<div id="Account_Group"[^>]*>([^<]+)<\/div>/);
+      const accountId = idMatch?.[1] || "Không tìm thấy";
+      const accountGroup = groupMatch?.[1] || "Không tìm thấy";
+
+      // Lưu vào AsyncStorage để Header nhận biết đã đăng nhập
+      await AsyncStorage.setItem("userToken", accountId); // hoặc lưu token nếu có
+      await AsyncStorage.setItem("userData", JSON.stringify({ accountId, accountGroup }));
+      console.log("🔍 Kiểm tra dữ liệu đã lưu:");
+
+      console.log("Account_ID:", accountId);
+      console.log("Account_Group:", accountGroup);
+      return { accountId, accountGroup };
+    } else {
+      throw new Error("Đăng nhập thất bại hoặc sai tài khoản.");
     }
-
-    return {
-      token: data.token,
-      user: data.user
-    };
   } catch (error) {
     console.error("Login error:", error);
     throw error;
   }
 };
 
-export const getUserData = async () => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    if (!token) {
-      throw new Error("No token found");
-    }
-
-    const response = await fetch(`${API_URL}/auth.php?route=usersData`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user data");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    throw error;
-  }
-};
 
 export const logout = async () => {
   try {
-    await AsyncStorage.removeItem("userToken");
-    await AsyncStorage.removeItem("userData");
+    await AsyncStorage.clear(); // Xóa toàn bộ dữ liệu trong AsyncStorage
+    await fetch("https://manlab.etv.org.vn/Account/Login?ReturnUrl=%2FAccount%2FLogout", {
+    method: "GET",
+    credentials: "include"
+});
+    
   } catch (error) {
     console.error("Logout error:", error);
     throw error;
   }
-}; 
+};

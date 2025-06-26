@@ -7,14 +7,7 @@ export default function RootLayout() {
       <Stack.Screen name="userCompany" options={{ headerShown: false }} />
       <Stack.Screen name="security" options={{ headerShown: false }} />
       <Stack.Screen name="setting" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="(edit)/editUserInfo"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="(edit)/editCompanyInfo"
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="ressetPassword" options={{ headerShown: false }} />
     </Stack>
   );
 }

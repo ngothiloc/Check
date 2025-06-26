@@ -80,8 +80,8 @@ export default function index() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#gray"]} // Màu của indicator khi refresh
-            tintColor="#gray" // Màu của indicator khi refresh (iOS)
+            colors={["#808080"]} // Màu của indicator khi refresh
+            tintColor="#808080" // Màu của indicator khi refresh (iOS)
             // title="Đang tải lại..." // Text hiển thị khi refresh (iOS)
             // titleColor="#409CF0" // Màu của text khi refresh (iOS)
           />
