@@ -18,5 +18,5 @@ export interface PTDItem {
   certificateNumber: string;
   sealNumber: string;
   image: string; // URL string
-  staffImages: StaffImage[];
+  staffName: string;
 } 

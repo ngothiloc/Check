@@ -69,7 +69,7 @@ export default function account() {
           {/* Thông tin tổ chức */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("/EditCompanyScreen")}
+            onPress={() => router.push("/userCompany")}
           >
             <MaterialCommunityIcons
               name="account-group"
@@ -82,7 +82,7 @@ export default function account() {
           {/* Thông tin cá nhân */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("/EditPersonalScreen")}
+            onPress={() => router.push("/userInfo")}
           >
             <MaterialCommunityIcons name="account" size={20} color="#5D5D5D" />
             <Text style={styles.text}>Thông tin cá nhân</Text>
@@ -91,7 +91,7 @@ export default function account() {
           {/* Bảo mật tài khoản */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("../(account)/security")}
+            onPress={() => router.push("/security")}
           >
             <MaterialCommunityIcons
               name="shield-half-full"
@@ -113,7 +113,7 @@ export default function account() {
           {/* Cài đặt */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push("../(account)/setting")}
+            onPress={() => router.push("/setting")}
           >
             <MaterialCommunityIcons name="cogs" size={20} color="#5D5D5D" />
             <Text style={styles.text}>Cài đặt</Text>

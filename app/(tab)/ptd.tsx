@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
@@ -8,244 +7,165 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { fetchPTDData } from "../../api/apiPTD";
-import { fetchFullUserData } from "../../api/user";
+import { fetchPTDDataFromAPI } from "../../api/apiPTD";
 import FilterModal from "../../app/(ptd)/filter";
 import FilterComponent from "../../components/Filter";
 import PTDBox from "../../components/PTDBox";
 import Sort from "../../components/Sort";
 import { PTDItem } from "../../types/ptd";
-import { BasicUserData } from "../../types/user";
+
+// Hàm chuyển đổi status text sang số cho API
+function statusTextToNumber(statusText: string): number | undefined {
+  switch (statusText) {
+    case "Hiệu lực":
+      return 1;
+    case "Sắp hết hiệu lực":
+      return 2;
+    case "Hết hiệu lực":
+      return 3;
+    case "Chờ cấp mới":
+      return 4;
+    case "Huỷ bỏ":
+      return 5;
+    default:
+      return undefined;
+  }
+}
 
 const PTDScreen = () => {
   const router = useRouter();
   const [deviceData, setDeviceData] = useState<PTDItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [originalData, setOriginalData] = useState<PTDItem[]>([]); // Store original data
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [originalData, setOriginalData] = useState<PTDItem[]>([]);
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<any>({}); // Store active filter criteria
+  const [activeFilters, setActiveFilters] = useState<any>({});
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [firstLoad, setFirstLoad] = useState(true);
 
-  // Wrap loadData in useCallback to make it stable
-  const loadData = useCallback(async () => {
-    try {
-      const data = await fetchPTDData();
-      setDeviceData(data);
-      setOriginalData(data); // Save original data
-      setError(false);
-      setErrorMessage("");
-    } catch (error) {
-      console.error("Error loading PTD data:", error);
-      setError(true);
-      setErrorMessage("Không thể tải dữ liệu PTD. Vui lòng thử lại sau.");
-      setDeviceData([]); // Clear data on error
-      setOriginalData([]); // Clear original data on error
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []); // Empty dependency array means this function is created only once
+  // Hàm load dữ liệu từ API, truyền filter vào API
+  const loadData = useCallback(
+    async (isFilter = false) => {
+      if (firstLoad || isFilter) {
+        setLoading(true);
+        setDeviceData([]); // Xóa dữ liệu cũ ngay khi bắt đầu filter hoặc load lần đầu
+      }
+      try {
+        // Chuyển status text sang số nếu có
+        let apiFilters = { ...activeFilters };
+        if (apiFilters.status) {
+          const statusNumber = statusTextToNumber(apiFilters.status);
+          apiFilters.status = statusNumber;
+        }
+        const data = await fetchPTDDataFromAPI(1, apiFilters);
+        setDeviceData(data);
+        setOriginalData(data);
+        setCurrentPage(1);
+        setHasMoreData(data && data.length === 30);
+        setError(false);
+        setErrorMessage("");
+      } catch (error) {
+        console.error("Error loading PTD data:", error);
+        setError(true);
+        setErrorMessage("Không thể tải dữ liệu PTD. Vui lòng thử lại sau.");
+        setDeviceData([]);
+        setOriginalData([]);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setFirstLoad(false);
+      }
+    },
+    [activeFilters, firstLoad]
+  );
 
-  // Use useFocusEffect to load data when the screen is focused
   useFocusEffect(
     useCallback(() => {
       loadData();
-
-      // Cleanup function (optional)
-      return () => {
-        // Any cleanup needed when the screen loses focus
-      };
-    }, [loadData]) // loadData is a dependency
+      return () => {};
+    }, [loadData])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try {
-      // Get basic user data to access email
-      const userDataStr = await AsyncStorage.getItem("userData");
-      if (userDataStr) {
-        const basicUserData: BasicUserData = JSON.parse(userDataStr);
-        // Fetch full user data from server to update AsyncStorage
-        await fetchFullUserData(basicUserData.email);
-        // Load updated data from AsyncStorage
-        await loadData();
-      } else {
-        console.warn(
-          "Cannot refresh: No basic user data found in AsyncStorage."
-        );
-        // Optionally redirect to login or show an error
-        setRefreshing(false);
-      }
-    } catch (error) {
-      console.error("Error during refresh:", error);
-      setRefreshing(false);
-      // Optionally show an error message on the UI
-    }
+    await loadData(false);
   }, [loadData]);
 
+  // Khi filter thay đổi, load lại dữ liệu từ API
   useEffect(() => {
-    // Apply filters whenever activeFilters or originalData changes
-    applyFilters();
-  }, [activeFilters, originalData]);
+    loadData(true);
+  }, [activeFilters]);
 
-  const applyFilters = () => {
-    let filteredData = [...originalData];
-
-    // Apply deviceName filter (case-insensitive, contains)
-    if (activeFilters.deviceName) {
-      filteredData = filteredData.filter((item) =>
-        item.deviceName
-          .toLowerCase()
-          .includes(activeFilters.deviceName.toLowerCase())
-      );
-    }
-
-    // Apply status filter
-    if (activeFilters.status) {
-      filteredData = filteredData.filter(
-        (item) => item.status === activeFilters.status
-      );
-    }
-
-    // Apply companyName filter (contains)
-    if (activeFilters.companyName) {
-      filteredData = filteredData.filter((item) =>
-        item.companyName
-          .toLowerCase()
-          .includes(activeFilters.companyName.toLowerCase())
-      );
-    }
-
-    // Apply model filter (contains)
-    if (activeFilters.model) {
-      filteredData = filteredData.filter((item) =>
-        item.model.toLowerCase().includes(activeFilters.model.toLowerCase())
-      );
-    }
-
-    // Apply serial filter (exact match)
-    if (activeFilters.serial) {
-      filteredData = filteredData.filter(
-        (item) => item.serial === activeFilters.serial
-      );
-    }
-
-    // Apply date range filter
-    if (activeFilters.dateFrom && activeFilters.dateTo) {
-      filteredData = filteredData.filter((item) => {
-        const [day, month, year] = item.date.split("/").map(Number);
-        const itemDate = new Date(year, month - 1, day);
-        return (
-          itemDate >= activeFilters.dateFrom && itemDate <= activeFilters.dateTo
-        );
-      });
-    } else if (activeFilters.dateFrom) {
-      filteredData = filteredData.filter((item) => {
-        const [day, month, year] = item.date.split("/").map(Number);
-        const itemDate = new Date(year, month - 1, day);
-        return itemDate >= activeFilters.dateFrom;
-      });
-    } else if (activeFilters.dateTo) {
-      filteredData = filteredData.filter((item) => {
-        const [day, month, year] = item.date.split("/").map(Number);
-        const itemDate = new Date(year, month - 1, day);
-        return itemDate <= activeFilters.dateTo;
-      });
-    }
-
-    // Apply requirement filter
-    if (activeFilters.requirement) {
-      filteredData = filteredData.filter(
-        (item) => item.requirement === activeFilters.requirement
-      );
-    }
-
-    // Apply receiveStatus filter
-    if (activeFilters.receiveStatus) {
-      filteredData = filteredData.filter(
-        (item) => item.receiveStatus === activeFilters.receiveStatus
-      );
-    }
-
-    // Apply returnStatus filter
-    if (activeFilters.returnStatus) {
-      filteredData = filteredData.filter(
-        (item) => item.returnStatus === activeFilters.returnStatus
-      );
-    }
-
-    // Apply bbdStatus filter
-    if (activeFilters.bbdStatus) {
-      filteredData = filteredData.filter(
-        (item) => item.bbdStatus === activeFilters.bbdStatus
-      );
-    }
-
-    // Apply certificateNumber filter (contains)
-    if (activeFilters.certificateNumber) {
-      filteredData = filteredData.filter((item) =>
-        item.certificateNumber
-          .toLowerCase()
-          .includes(activeFilters.certificateNumber.toLowerCase())
-      );
-    }
-
-    // Apply sealNumber filter (contains)
-    if (activeFilters.sealNumber) {
-      filteredData = filteredData.filter((item) =>
-        item.sealNumber
-          .toLowerCase()
-          .includes(activeFilters.sealNumber.toLowerCase())
-      );
-    }
-
-    setDeviceData(filteredData);
-  };
-
+  // Hàm sort dữ liệu trên client
   const handleSortChange = (option: "newest" | "oldest" | null) => {
-    if (!originalData) return; // Ensure originalData is loaded before sorting
-
+    if (!originalData) return;
     if (!option) {
-      // Reset to filtered data if no sort option is selected (maintain current filters)
-      applyFilters(); // Re-apply filters without sorting
+      setDeviceData(originalData);
       return;
     }
-
     const sorted = [...deviceData].sort((a, b) => {
-      const [dayA, monthA, yearA] = a.date.split("/").map(Number);
-      const [dayB, monthB, yearB] = b.date.split("/").map(Number);
-      const dateA = new Date(yearA, monthA - 1, dayA);
-      const dateB = new Date(yearB, monthB - 1, dayB);
-
+      const dateA = a.date.includes("/")
+        ? new Date(a.date.split("/").reverse().join("-"))
+        : new Date(a.date);
+      const dateB = b.date.includes("/")
+        ? new Date(b.date.split("/").reverse().join("-"))
+        : new Date(b.date);
       return option === "newest"
         ? dateB.getTime() - dateA.getTime()
         : dateA.getTime() - dateB.getTime();
     });
-
     setDeviceData(sorted);
   };
 
-  const handleFilterPress = () => {
-    setFilterModalVisible(true); // Open the filter modal
-  };
-
-  const handleFilterModalClose = () => {
-    setFilterModalVisible(false);
-  };
+  const handleFilterPress = () => setFilterModalVisible(true);
+  const handleFilterModalClose = () => setFilterModalVisible(false);
 
   const handleApplyFilters = (criteria: any) => {
     setActiveFilters(criteria);
     setFilterModalVisible(false);
+    // KHÔNG gọi loadData ở đây!
   };
 
-  if (loading) {
+  // Load thêm dữ liệu khi scroll
+  const loadMoreData = async () => {
+    if (!hasMoreData || loading || loadingMore) return;
+    try {
+      setLoadingMore(true);
+      let apiFilters = { ...activeFilters };
+      if (apiFilters.status) {
+        const statusNumber = statusTextToNumber(apiFilters.status);
+        apiFilters.status = statusNumber;
+      }
+      const nextPage = currentPage + 1;
+      const newData = await fetchPTDDataFromAPI(nextPage, apiFilters);
+      if (!newData || newData.length === 0) {
+        setHasMoreData(false);
+        return;
+      }
+      setDeviceData((prevData) => [...prevData, ...newData]);
+      setOriginalData((prevData) => [...prevData, ...newData]);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      console.error("Error loading more data:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  if (loading && (firstLoad || refreshing === false)) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#409CF0" />
+        <ActivityIndicator size="large" color="#888" />
+        <Text style={{ color: "#888", marginTop: 16, fontSize: 16 }}>
+          Đang tải dữ liệu...
+        </Text>
       </View>
     );
   }
@@ -277,7 +197,7 @@ const PTDScreen = () => {
                 companyName={item.companyName}
                 model={item.model}
                 serial={item.serial}
-                staffImages={item.staffImages}
+                staffName={item.staffName}
                 date={item.date}
                 requirement={item.requirement}
                 receiveStatus={item.receiveStatus}
@@ -295,15 +215,26 @@ const PTDScreen = () => {
                 onRefresh={onRefresh}
                 colors={["#gray"]}
                 tintColor="#gray"
-                // title="Đang tải lại..."
-                // titleColor="#409CF0"
               />
+            }
+            ListFooterComponent={
+              hasMoreData ? (
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  onPress={loadMoreData}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <ActivityIndicator size="small" color="#409CF0" />
+                  ) : (
+                    <Text style={styles.loadMoreText}>Xem thêm</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null
             }
           />
         )}
       </View>
-
-      {/* Filter Modal */}
       <FilterModal
         visible={isFilterModalVisible}
         onClose={handleFilterModalClose}
@@ -333,10 +264,22 @@ const styles = StyleSheet.create({
   },
   ptdBox: {
     marginVertical: 30,
-    // shadowColor: "#409CF0",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 1.5,
+  },
+  loadMoreButton: {
+    alignItems: "center",
+    marginVertical: 20,
+    padding: 10,
+    borderRadius: 8,
+    width: "100%",
+    marginBottom: 30,
+  },
+  loadMoreText: {
+    color: "#409CF0",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 

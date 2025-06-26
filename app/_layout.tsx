@@ -7,6 +7,12 @@ export default function RootLayout() {
       <Stack.Screen name="(news)/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="(ptd)/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="(scanqr)/history" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="(noti)/notifications"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="(account)" options={{ headerShown: false }} />
+      <Stack.Screen name="booking" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ headerShown: false }} />
     </Stack>

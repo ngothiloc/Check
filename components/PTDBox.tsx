@@ -14,7 +14,6 @@ const PTDBox = ({
   companyName,
   model,
   serial,
-  staffImages,
   date,
   requirement,
   receiveStatus,
@@ -22,6 +21,7 @@ const PTDBox = ({
   bbdStatus,
   certificateNumber,
   sealNumber,
+  staffName,
 }: PTDBoxProps) => {
   const router = useRouter();
 
@@ -40,7 +40,7 @@ const PTDBox = ({
               companyName,
               model,
               serial,
-              staffImages,
+              staffName,
               date,
               requirement,
               receiveStatus,
@@ -117,18 +117,9 @@ const PTDBox = ({
       <View style={styles.bottom}>
         <View style={styles.staff}>
           <Text style={styles.textBottom}>Nhân viên:</Text>
-          <View style={{ justifyContent: "center" }}>
-            {staffImages.map((image, index) => (
-              <Image
-                key={index}
-                source={image}
-                style={[
-                  styles.imageStaff,
-                  { left: index * 15, zIndex: staffImages.length - index },
-                ]}
-              />
-            ))}
-          </View>
+          <Text style={[styles.textBottom, { marginLeft: 5 }]}>
+            {staffName || "Không xác định"}
+          </Text>
         </View>
         <View style={styles.date}>
           <MaterialCommunityIcons name="calendar" size={20} color="#656565" />

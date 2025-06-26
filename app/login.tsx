@@ -1,6 +1,5 @@
 import Title from "@/components/ui/Title";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Checkbox from "expo-checkbox";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -21,42 +20,33 @@ import { loginUser } from "../api/auth";
 import InputInfor from "../components/ui/InputInfor";
 import InputPass from "../components/ui/InputPass";
 import LoginOrther from "../components/ui/LoginOther";
-// import Nut from "../components/Nut";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [mst, setMst] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassWord] = useState("");
   const [isCheck, setIsCheck] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [checkEmail, setCheckEmail] = useState(false);
+  const [checkUsername, setCheckUsername] = useState(false);
   const [checkPass, setCheckPass] = useState(false);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateUsername = (username: string) => username.trim().length > 0;
 
   const LoginPress = async () => {
     setIsSubmitted(true);
-    setCheckEmail(!validateEmail(email));
+    setCheckUsername(!validateUsername(username));
     setCheckPass(password.length < 6);
 
-    if (!validateEmail(email) || password.length < 6) {
+    if (!validateUsername(username) || password.length < 6) {
       return;
     }
 
     setLoading(true);
     try {
-      const response = await loginUser(email, password);
-
-      // Store user data and token
-      await AsyncStorage.setItem("userToken", response.token);
-      await AsyncStorage.setItem("userData", JSON.stringify(response.user));
-
-      // Navigate to main app
+      await loginUser(username, password);
+      // Sau khi đăng nhập thành công, chuyển sang trang chính
       router.replace("/(tab)");
     } catch (error: any) {
       Alert.alert(
@@ -118,11 +108,10 @@ export default function LoginScreen() {
                   onChangeText={(value: string) => setMst(value)}
                 />
                 <InputInfor
-                  text="Email"
-                  leftIconName="email-outline"
-                  keyboardType="email-address"
-                  onChangeText={(value: string) => setEmail(value)}
-                  isError={isSubmitted && checkEmail}
+                  text="Tên đăng nhập"
+                  leftIconName="account"
+                  onChangeText={(value: string) => setUsername(value)}
+                  isError={isSubmitted && checkUsername}
                 />
                 <InputPass
                   text="Nhập mật khẩu"

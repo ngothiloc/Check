@@ -22,13 +22,23 @@ export default function PTDDetail() {
       <StatusBar style="dark" />
 
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 10,
+          }}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.title}>{data.deviceName}</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.title}>{data.deviceName}</Text>
+        </View>
       </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
@@ -119,9 +129,8 @@ export default function PTDDetail() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Nhân viên phụ trách</Text>
             <View style={styles.staffContainer}>
-              {data.staffImages.map((image, index) => (
-                <Image key={index} source={image} style={styles.staffImage} />
-              ))}
+              <Text style={styles.label}>Tên nhân viên:</Text>
+              <Text style={styles.value}>{data.staffName}</Text>
             </View>
           </View>
         </View>
@@ -154,7 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   title: {
-    fontSize: 24,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#333",
   },
@@ -215,8 +224,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   imageContainer: {
-    width: "100%",
-    height: 200,
+    width: "40%",
+    aspectRatio: 1,
     marginBottom: 16,
     borderRadius: 12,
     overflow: "hidden",
@@ -226,9 +235,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    alignSelf: "center",
   },
   deviceImage: {
     width: "100%",
     height: "100%",
+    resizeMode: "cover",
+    aspectRatio: 1,
   },
 });

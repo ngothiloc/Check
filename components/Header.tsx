@@ -12,8 +12,8 @@ import {
   View,
 } from "react-native";
 import { logout } from "../api/auth";
-import { fetchFullUserData } from "../api/user";
-import { BasicUserData, FullUserData } from "../types/user";
+import { fetchAccountInfoById } from "../api/user";
+import { FullUserData } from "../types/user";
 import SearchBar from "./SearchBar";
 
 const { height, width } = Dimensions.get("window");
@@ -22,7 +22,8 @@ interface UserData extends FullUserData {}
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userData, setUserData] = useState<FullUserData | null>(null);
+  const [userData, setUserData] = useState<any>(null); // Sửa lại kiểu cho phù hợp dữ liệu mới
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const router = useRouter();
 
   useFocusEffect(
@@ -32,20 +33,27 @@ export default function Header() {
           const userToken = await AsyncStorage.getItem("userToken");
           const userDataStr = await AsyncStorage.getItem("userData");
 
-          if (userToken && userDataStr) {
-            const basicUserData: BasicUserData = JSON.parse(userDataStr);
+          if (userToken) {
+            // Lấy thông tin user từ API mới bằng Account_ID (userToken)
+            const fullData = await fetchAccountInfoById(userToken);
             setIsLoggedIn(true);
-
-            const fullData = await fetchFullUserData(basicUserData.email);
             setUserData(fullData);
+
+            // Nếu có trường thông báo chưa đọc, xử lý ở đây (giả sử có trường Notifications)
+            const hasUnread = fullData.Notifications?.some(
+              (notification: any) => notification.is_read === "0"
+            );
+            setHasUnreadNotifications(hasUnread || false);
           } else {
             setIsLoggedIn(false);
             setUserData(null);
+            setHasUnreadNotifications(false);
           }
         } catch (error) {
           console.error("Error loading user data in Header on focus:", error);
           setIsLoggedIn(false);
           setUserData(null);
+          setHasUnreadNotifications(false);
         }
       };
 
@@ -69,9 +77,12 @@ export default function Header() {
         onPress: async () => {
           try {
             await logout();
+
             setIsLoggedIn(false);
             setUserData(null);
             router.replace("/(tab)");
+            const keys = await AsyncStorage.getAllKeys();
+            console.log("🧹 Sau khi logout, còn key:", keys);
           } catch (error) {
             Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.");
           }
@@ -85,12 +96,12 @@ export default function Header() {
       return (
         <View style={styles.lefttext}>
           <Text style={{ fontSize: 14, color: "white" }}>Xin chào</Text>
-          <Text style={{ fontSize: 24, color: "white" }}>{userData.name}</Text>
-          {userData.company && (
-            <Text style={{ fontSize: 14, color: "white" }}>
-              {userData.company.name}
-            </Text>
-          )}
+          <Text style={{ fontSize: 24, color: "white" }}>
+            {userData.colName?.v || ""}
+          </Text>
+          <Text style={{ fontSize: 12, color: "white" }}>
+            {stripHtml(userData.KhachHang?.r || "")}
+          </Text>
         </View>
       );
     }
@@ -117,13 +128,13 @@ export default function Header() {
         {renderUserInfo()}
         <View style={styles.righttext}>
           <View style={styles.notification}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/notifications")}>
               <MaterialCommunityIcons
                 name="bell-outline"
                 size={25}
                 color="white"
               />
-              <View style={styles.badge}></View>
+              {hasUnreadNotifications && <View style={styles.badge}></View>}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.push("/scanqr")}>
@@ -165,12 +176,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    height: 80,
+    height: 100,
     top: height < 1000 ? height * 0.07 : height * 0.1,
   },
   lefttext: {
-    rowGap: 10,
+    rowGap: 8,
     justifyContent: "center",
+    width: width < 700 ? width * 0.6 : width * 0.5,
   },
   righttext: {
     flexDirection: "row",
@@ -198,7 +210,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: width * 0.1,
     right: width * 0.1,
-    top: height < 1000 ? height * 0.11 : height * 0.18,
+    top: height < 1000 ? height * 0.09 : height * 0.18,
     height: 50,
   },
   authLink: {
@@ -207,3 +219,12 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
 });
+
+// Thêm hàm loại bỏ HTML vào đầu file (nếu chưa có)
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}

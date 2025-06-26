@@ -109,6 +109,7 @@ export default function TabLayout() {
           headerStyle: {
             height: 120,
           },
+          headerShadowVisible: false,
         }}
       />
       <Tabs.Screen
